@@ -27,6 +27,7 @@ public:
 	bool isMineAt(int pX, int pY);
 	int getNeighborsAt(int pX, int pY);
 	bool uncoverAt(int pX, int pY);
+	void uncoverAll(void);
 	void moveMineAt(int pX, int pY);
 private:
 	vector < vector<Cell> > aCells;

@@ -10,7 +10,7 @@
 namespace std {
 
 int cursorXPos, cursorYPos;
-bool mouseRelease, mousePress, windowResized;
+bool mouseRelease, mousePress, windowResized, enterPressed;
 
 
 static void error_callback(int pError, const char* pDescription){
@@ -19,8 +19,12 @@ static void error_callback(int pError, const char* pDescription){
 
 static void key_callback(GLFWwindow* pWindow,
 		int pKey, int pScancode, int pAction, int pMods){
-	if (pKey == GLFW_KEY_ESCAPE && pAction == GLFW_PRESS)
+	if (pKey == GLFW_KEY_ESCAPE && pAction == GLFW_PRESS){
 		glfwSetWindowShouldClose(pWindow, GL_TRUE);
+	}
+	else if(pKey == GLFW_KEY_ENTER && pAction == GLFW_PRESS){
+		enterPressed = true;
+	}
 }
 
 static void mouse_button_callback(GLFWwindow* pWindow,
@@ -48,19 +52,23 @@ pair<int,int> GUI::mouseToCell(){
 	return make_pair(x,y);
 }
 void GUI::loadTextures(){
-	for(int i = 0; i<11; i++){
+	for(int i = 0; i<aTextures.size(); i++){
 		if(i < 9){
 			stringstream ss;
 			ss << "assets/png/tile_uncovered_" << i << ".png";
 			Texture t (ss.str());
 			aTextures[i] = t.getID();
 		}
-		else if(i == 10){
+		else if(i == 9){
 			Texture t ("assets/png/tile_covered_up.png");
 			aTextures[i] = t.getID();
 		}
-		else{
+		else if(i == 10){
 			Texture t ("assets/png/tile_covered_down.png");
+			aTextures[i] = t.getID();
+		}
+		else{
+			Texture t ("assets/png/mine.png");
 			aTextures[i] = t.getID();
 		}
 
@@ -71,41 +79,46 @@ void GUI::drawTile(int pX, int pY){
 	double adjustedY = ((double)pY/aMinefield.getHeight())*(2) - 1;
 
 	if(aMinefield.isUncoveredAt(pX,pY)){
-		switch(aMinefield.getNeighborsAt(pX,pY)){
-		case 0:
-			glBindTexture(GL_TEXTURE_2D,aTextures[0]);
-			break;
-		case 1:
-			glBindTexture(GL_TEXTURE_2D,aTextures[1]);
-			break;
-		case 2:
-			glBindTexture(GL_TEXTURE_2D,aTextures[2]);
-			break;
-		case 3:
-			glBindTexture(GL_TEXTURE_2D,aTextures[3]);
-			break;
-		case 4:
-			glBindTexture(GL_TEXTURE_2D,aTextures[4]);
-			break;
-		case 5:
-			glBindTexture(GL_TEXTURE_2D,aTextures[5]);
-			break;
-		case 6:
-			glBindTexture(GL_TEXTURE_2D,aTextures[6]);
-			break;
-		case 7:
-			glBindTexture(GL_TEXTURE_2D,aTextures[7]);
-			break;
-		case 8:
-			glBindTexture(GL_TEXTURE_2D,aTextures[8]);
-			break;
+		if(aMinefield.isMineAt(pX,pY)){
+			glBindTexture(GL_TEXTURE_2D,aTextures[11]);
+		}
+		else{
+			switch(aMinefield.getNeighborsAt(pX,pY)){
+			case 0:
+				glBindTexture(GL_TEXTURE_2D,aTextures[0]);
+				break;
+			case 1:
+				glBindTexture(GL_TEXTURE_2D,aTextures[1]);
+				break;
+			case 2:
+				glBindTexture(GL_TEXTURE_2D,aTextures[2]);
+				break;
+			case 3:
+				glBindTexture(GL_TEXTURE_2D,aTextures[3]);
+				break;
+			case 4:
+				glBindTexture(GL_TEXTURE_2D,aTextures[4]);
+				break;
+			case 5:
+				glBindTexture(GL_TEXTURE_2D,aTextures[5]);
+				break;
+			case 6:
+				glBindTexture(GL_TEXTURE_2D,aTextures[6]);
+				break;
+			case 7:
+				glBindTexture(GL_TEXTURE_2D,aTextures[7]);
+				break;
+			case 8:
+				glBindTexture(GL_TEXTURE_2D,aTextures[8]);
+				break;
+			}
 		}
 	}
 	else if(aTilePressed && (make_pair(pX,pY) == mouseToCell())){
-		glBindTexture(GL_TEXTURE_2D,aTextures[10]);
+		glBindTexture(GL_TEXTURE_2D,aTextures[9]);
 	}
 	else{
-		glBindTexture(GL_TEXTURE_2D,aTextures[9]);
+		glBindTexture(GL_TEXTURE_2D,aTextures[10]);
 	}
 	glBegin(GL_TRIANGLE_STRIP);
 	glTexCoord2d(0.0,1.0);
@@ -127,8 +140,11 @@ void GUI::drawAll(){
 
 }
 
+void GUI::newGame(){
+	aMinefield = Minefield(DEFAULT_ROWS,DEFAULT_COLUMNS,DEFAULT_MINES);
+}
 
-GUI::GUI() : aMinefield(20,20,50) {
+GUI::GUI() : aMinefield(DEFAULT_ROWS,DEFAULT_COLUMNS,DEFAULT_MINES), aTextures(12) {
 	glfwSetErrorCallback(error_callback);
 	if (!glfwInit())
 		exit(EXIT_FAILURE);
@@ -154,7 +170,7 @@ GUI::GUI() : aMinefield(20,20,50) {
 	bool firstClick = true;
 	glEnable(GL_TEXTURE_2D);
 	loadTextures();
-	while ((!glfwWindowShouldClose(aWindow)) && (!gameOver)){
+	while ((!glfwWindowShouldClose(aWindow))){
 		if(aWindowIsDirty){
 			glClear(GL_COLOR_BUFFER_BIT);
 			drawAll();
@@ -174,6 +190,7 @@ GUI::GUI() : aMinefield(20,20,50) {
 				firstClick = false;
 			}
 			gameOver = aMinefield.uncoverAt(cellCoords.first,cellCoords.second);
+			if(gameOver){ aMinefield.uncoverAll();}
 			aWindowIsDirty = true;
 			aTilePressed = false;
 			mouseRelease = false;
@@ -182,6 +199,11 @@ GUI::GUI() : aMinefield(20,20,50) {
 			glfwGetWindowSize(aWindow, &aWindowWidth, &aWindowHeight);
 			aWindowIsDirty = true;
 			windowResized = false;
+		}
+		if(enterPressed){
+			newGame();
+			aWindowIsDirty = true;
+			enterPressed = false;
 		}
 	}
 	glfwDestroyWindow(aWindow);

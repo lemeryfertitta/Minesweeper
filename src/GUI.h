@@ -16,6 +16,7 @@
 #include "Minefield.h"
 #include "Texture.h"
 #include <tuple>
+#include <vector>
 
 namespace std {
 
@@ -25,15 +26,17 @@ private:
 	bool aWindowIsDirty;
 	Minefield aMinefield;
 	double aTileWidth, aTileHeight;
-	int aTextures[11];
+	vector<int> aTextures;
 	bool aTilePressed;
 	int aWindowWidth, aWindowHeight;
 public:
-	static const int DEFAULT_WIDTH = 640;
-	static const int DEFAULT_HEIGHT = 480;
+	static const int DEFAULT_WIDTH = 640, DEFAULT_HEIGHT = 480,
+					DEFAULT_ROWS = 20, DEFAULT_COLUMNS = 20,
+					DEFAULT_MINES = 50;
 	void drawTile(int pX, int pY);
 	void drawAll(void);
 	void loadTextures(void);
+	void newGame(void);
 	pair<int,int> mouseToCell(void);
 	GUI();
 	~GUI();

@@ -90,6 +90,13 @@ bool Minefield::uncoverAt(int pX, int pY){
 	}
 	return false;
 }
+void Minefield::uncoverAll(){
+	for(int y = 0; y<aHeight; y++){
+		for(int x = 0; x<aWidth; x++){
+			aCells.at(x).at(y).uncover();
+		}
+	}
+}
 
 Minefield::Minefield(int pWidth, int pHeight, int pNumOfMines)
 	: aCells(pWidth, vector<Cell>(pHeight, Cell()))	{
